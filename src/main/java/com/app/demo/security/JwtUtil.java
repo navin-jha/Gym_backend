@@ -2,11 +2,13 @@ package com.app.demo.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,15 +16,17 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    private static final String SECRET = "${JWT_SECRET}";
+    @Value("${jwt.secret}")
+    private String secret;
 
     private static final long EXPIRATION = 1000 * 60 * 60; // 1 hour
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // ================= GENERATE TOKEN =================
+    // ================= Generate Token =================
+
     public String generateToken(String email, String role) {
 
         Map<String, Object> claims = new HashMap<>();
@@ -33,33 +37,37 @@ public class JwtUtil {
                 .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
-                .signWith(getSigningKey())
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // ================= EXTRACT EMAIL =================
+    // ================= Extract Email =================
+
     public String extractEmail(String token) {
         return extractAllClaims(token).getSubject();
     }
 
-    // ================= EXTRACT ROLE =================
+    // ================= Extract Role =================
+
     public String extractRole(String token) {
         return extractAllClaims(token).get("role", String.class);
     }
 
-    // ================= VALIDATE TOKEN =================
+    // ================= Validate Token =================
+
     public boolean validateToken(String token) {
         try {
-            return !extractAllClaims(token)
-                    .getExpiration()
-                    .before(new Date());
+            Claims claims = extractAllClaims(token);
+            return claims.getExpiration().after(new Date());
         } catch (Exception e) {
             return false;
         }
     }
 
-    // ================= EXTRACT CLAIMS =================
+    // ================= Extract All Claims =================
+
     private Claims extractAllClaims(String token) {
+
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
