@@ -1,5 +1,6 @@
 package com.app.demo;
 
+import com.app.demo.config.DotenvInitializer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -7,6 +8,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class DemoApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
+
+        SpringApplication app = new SpringApplication(DemoApplication.class);
+        app.addInitializers(new DotenvInitializer());
+        app.run(args);
     }
 }
