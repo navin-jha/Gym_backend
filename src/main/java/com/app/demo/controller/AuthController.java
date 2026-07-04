@@ -33,10 +33,13 @@ public class AuthController {
 
                 user.setPassword(passwordEncoder.encode(user.getPassword()));
                 userRepository.save(user);
+                String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
                 return ResponseEntity.ok(Map.of(
                                 "success", true,
-                                "name", user.getName(),
+                                "token", token,
+                                "role", user.getRole().name(),
+                                "name", user.getName(), // ⭐ IMPORTANT
                                 "email", user.getEmail()));
         }
 
